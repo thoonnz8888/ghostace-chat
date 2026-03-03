@@ -1,160 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostAce2011 Chat - Stable</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #e5ddd5; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Auth Screen */
-        #auth-screen { position: fixed; inset: 0; background: #075e54; display: flex; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
-        .auth-box { background: white; padding: 25px; border-radius: 15px; color: #333; width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; }
-        
-        /* Chat UI */
-        #chat-page { display: none; flex-direction: column; height: 100vh; }
-        .header { background: #075e54; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        
-        /* Message Styles */
-        .message { padding: 10px 14px; border-radius: 12px; max-width: 85%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); align-self: flex-start; position: relative; word-wrap: break-word; }
-        .admin-msg { background: #fff8e1; border: 2px solid #ffd700; align-self: center; text-align: center; width: 90%; color: #333; }
-        .my-msg { align-self: flex-end; background: #dcf8c6; }
-        
-        .user-name { font-weight: bold; font-size: 12px; display: block; margin-bottom: 4px; color: #128c7e; }
-        .admin-label { color: #b8860b; font-weight: bold; }
-        
-        /* Delete Button for Admin */
-        .del-btn { color: #ff4444; font-size: 18px; cursor: pointer; float: right; margin-left: 10px; border: none; background: none; }
+    <title>GhostAce Chat Pro</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-        .input-bar { background: #f0f0f0; padding: 12px; display: flex; gap: 8px; border-top: 1px solid #ddd; }
-        #msgInput { flex: 1; border-radius: 25px; border: 1px solid #ccc; padding: 12px 18px; font-size: 16px; outline: none; }
-        .send-btn { background: #075e54; color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 18px; }
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { 
+            margin: 0; padding: 0; height: 100vh; 
+            background: #e5ddd5; background-size: cover; background-position: center;
+            display: flex; flex-direction: column; transition: 0.5s;
+        }
+        #chat-header { 
+            background: #075e54; color: white; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #message-container { 
+            flex: 1; overflow-y: auto; padding: 20px; 
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .message { 
+            max-width: 80%; padding: 10px; border-radius: 10px; 
+            position: relative; word-wrap: break-word;
+        }
+        .sent { align-self: flex-end; background: #dcf8c6; }
+        .received { align-self: flex-start; background: white; }
+        
+        /* ၁။ Timestamp Style */
+        .timestamp { 
+            font-size: 0.65rem; color: #888; display: block; 
+            margin-top: 4px; text-align: right; 
+        }
+        
+        #input-area { 
+            background: #f0f0f0; padding: 10px; display: flex; gap: 10px; 
+        }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        button { background: #075e54; color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="auth-screen">
-    <div class="auth-box">
-        <h2 style="text-align:center; color:#075e54;">GhostAce2011</h2>
-        <input type="email" id="emailInput" placeholder="Email">
-        <input type="password" id="passInput" placeholder="Password">
-        <button onclick="login()" style="background:#075e54; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold;">Login ဝင်မည်</button>
-        <button onclick="signup()" style="background:#25d366; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold;">အကောင့်သစ်ဖွင့်ရန်</button>
+<div id="chat-header">
+    <strong>GhostAce Chat</strong>
+    <div>
+        <input type="file" id="wp-input" style="display:none" accept="image/*">
+        <button onclick="document.getElementById('wp-input').click()">🖼️</button>
+        <button onclick="logout()" style="background:#cc0000; font-size: 10px;">Logout</button>
     </div>
 </div>
 
-<div id="chat-page">
-    <div class="header">
-        <span>GhostAce2011 Chat</span>
-        <button onclick="logout()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:5px 10px; border-radius:5px;">Logout</button>
-    </div>
-    <div id="chat-container"></div>
-    <div class="input-bar">
-        <input type="text" id="msgInput" placeholder="စာရိုက်ပါ...">
-        <button class="send-btn" id="sendBtn">➤</button>
-    </div>
+<div id="message-container"></div>
+
+<div id="input-area">
+    <input type="text" id="msg-input" placeholder="စာရိုက်ပါ...">
+    <button onclick="sendMessage()">Send</button>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<script>
+    // မင်းပေးထားတဲ့ Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyB_IdBe27bNVBOh_cBlC-BRQrHdwHrznpE",
+        authDomain: "demon-chat-20361.firebaseapp.com",
+        databaseURL: "https://demon-chat-20361-default-rtdb.firebaseio.com",
+        projectId: "demon-chat-20361",
+        storageBucket: "demon-chat-20361.firebasestorage.app",
+        messagingSenderId: "563979701938",
+        appId: "1:563979701938:web:36a01ceb134f3e624ec3ab"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyB_IdBe27bNVBOh_cBlC-BRQrHdwHrznpE",
-    authDomain: "demon-chat-20361.firebaseapp.com",
-    databaseURL: "https://demon-chat-20361-default-rtdb.firebaseio.com",
-    projectId: "demon-chat-20361",
-    storageBucket: "demon-chat-20361.firebasestorage.app",
-    messagingSenderId: "563979701938",
-    appId: "1:563979701938:web:f7260d92744824284ec3ab"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-  let currentUser = null;
-
-  // Auth Functions
-  window.login = () => {
-    const e = document.getElementById('emailInput').value;
-    const p = document.getElementById('passInput').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("အမှား: " + err.message));
-  };
-
-  window.signup = () => {
-    const e = document.getElementById('emailInput').value;
-    const p = document.getElementById('passInput').value;
-    createUserWithEmailAndPassword(auth, e, p).then(() => alert("အကောင့်ဖွင့်ပြီးပါပြီ")).catch(err => alert(err.message));
-  };
-
-  window.logout = () => signOut(auth).then(() => location.reload());
-
-  // App Logic
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      currentUser = user;
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('chat-page').style.display = 'flex';
-      initChat();
+    // ၃။ Notification ခွင့်ပြုချက်တောင်းခြင်း
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
     }
-  });
 
-  function initChat() {
-    const messagesRef = ref(db, 'chat_messages');
-    const container = document.getElementById('chat-container');
+    // Wallpaper ပြန်ဖော်ခြင်း
+    const savedWp = localStorage.getItem('chat_bg');
+    if (savedWp) document.body.style.backgroundImage = `url(${savedWp})`;
 
-    // Send Message
-    document.getElementById('sendBtn').onclick = () => {
-      const text = document.getElementById('msgInput').value;
-      if(text.trim()) {
-        push(messagesRef, {
-          email: currentUser.email,
-          text: text,
-          isAdmin: currentUser.email === "thoonnz8888@gmail.com",
-          timestamp: Date.now()
-        });
-        document.getElementById('msgInput').value = "";
-      }
+    document.getElementById('wp-input').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            document.body.style.backgroundImage = `url(${reader.result})`;
+            localStorage.setItem('chat_bg', reader.result);
+        };
+        reader.readAsDataURL(e.target.files[0]);
     };
 
-    // Show Messages
-    onChildAdded(messagesRef, (snapshot) => {
-      const msg = snapshot.val();
-      const id = snapshot.key;
-      const div = document.createElement('div');
-      div.id = id;
-      
-      let isAdminUser = (currentUser.email === "thoonnz8888@gmail.com");
-      let deleteBtn = isAdminUser ? `<button class="del-btn" onclick="deleteMessage('${id}')">×</button>` : "";
+    // စာပို့ခြင်း (Timestamp ပါဝင်သည်)
+    function sendMessage() {
+        const user = auth.currentUser;
+        const text = document.getElementById('msg-input').value;
+        if (user && text.trim() !== "") {
+            const now = new Date();
+            const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+            db.ref('messages').push({
+                sender: user.email,
+                text: text,
+                time: time
+            });
+            document.getElementById('msg-input').value = "";
+        } else if (!user) {
+            alert("ကျေးဇူးပြု၍ အရင် Login ဝင်ပါ");
+        }
+    }
 
-      if(msg.isAdmin) {
-        div.className = "message admin-msg";
-        div.innerHTML = `${deleteBtn}<span class="admin-label">👑 Admin (Thoon)</span>${msg.text}`;
-      } else {
-        div.className = "message " + (msg.email === currentUser.email ? "my-msg" : "");
-        div.innerHTML = `${deleteBtn}<span class="user-name">${msg.email.split('@')[0]}</span>${msg.text}`;
-      }
+    // စာများပြသခြင်းနှင့် Notification လွှတ်ခြင်း
+    db.ref('messages').on('child_added', (snapshot) => {
+        const data = snapshot.val();
+        const container = document.getElementById('message-container');
+        const isMe = auth.currentUser && data.sender === auth.currentUser.email;
 
-      container.appendChild(div);
-      container.scrollTop = container.scrollHeight;
+        const msgHtml = `
+            <div class="message ${isMe ? 'sent' : 'received'}">
+                <small style="font-size: 0.6rem; color: #075e54;">${data.sender}</small><br>
+                ${data.text}
+                <span class="timestamp">${data.time || ''}</span>
+            </div>
+        `;
+        container.innerHTML += msgHtml;
+        container.scrollTop = container.scrollHeight;
+
+        // Notification (ကိုယ်တိုင်ပို့တာမဟုတ်လျှင်)
+        if (!isMe && document.hidden) {
+            new Notification("Message from " + data.sender, { body: data.text });
+        }
     });
 
-    // Handle Deletion UI
-    onChildRemoved(messagesRef, (snapshot) => {
-      const el = document.getElementById(snapshot.key);
-      if(el) el.remove();
-    });
+    function logout() { auth.signOut().then(() => location.reload()); }
 
-    // Delete Function (Admin only)
-    window.deleteMessage = (id) => {
-      if(confirm("ဒီစာကို ဖျက်မှာ သေချာလား?")) {
-        remove(ref(db, 'chat_messages/' + id));
-      }
-    };
-  }
+    // အလိုအလျောက် Login စစ်ဆေးခြင်း
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            const email = prompt("Email ရိုက်ပါ:");
+            const pass = prompt("Password ရိုက်ပါ:");
+            auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+        }
+    });
 </script>
 </body>
 </html>
